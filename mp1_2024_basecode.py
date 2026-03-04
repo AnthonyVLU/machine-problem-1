@@ -81,27 +81,36 @@ class MazeState():
     
     def get_new_pos(self, move):
         """ Returns a new position from the current position and the specified move """
-        if move=='up':
-            new_pos = (self.pos[0]-1, self.pos[1])
-        elif move=='down':
-            new_pos = (self.pos[0]+1, self.pos[1])
-        elif move=='left':
-            new_pos = (self.pos[0], self.pos[1]-1)
-        elif move=='right':
-            new_pos = (self.pos[0], self.pos[1]+1)
-        else:
-            raise('wrong direction for checking move')
+        rows = self.maze.shape[0]
+        cols = self.maze.shape[1]
+        match move:
+            case 'up':
+                if self.pos[0] - 1 >= 0:
+                    new_pos = (self.pos[0]-1, self.pos[1])
+                else: # Wrap around to bottom
+                    new_pos = (rows - 1,self.pos[1])
+            case 'down':
+                if self.pos[0] + 1 < rows:
+                    new_pos = (self.pos[0] + 1, self.pos[1])
+                else: # Wrap around to top
+                    new_pos = (0, self.pos[1])
+            case 'left':
+                if self.pos[1] - 1 >= 0:
+                    new_pos = (self.pos[0], self.pos[1] - 1)
+                else: # Wrap around to right
+                    new_pos = (self.pos[0], cols - 1)
+            case 'right':
+                if self.pos[1] + 1 < cols:
+                    new_pos = (self.pos[0], self.pos[1] + 1)
+                else: # Wrap around to left
+                    new_pos = (self.pos[0], 0)
+            case _:
+                raise('wrong direction for checking move')
         return new_pos
         
     def can_move(self, move):
         """ Returns true if agent can move in the given direction """
         new_pos = self.get_new_pos(move)
-        
-        # Getting rid of this check to enable some wrap around moves
-        # TODO: Implement functionality for ALL wrap around moves 
-        """if new_pos[0] < 0 or new_pos[0] >= self.maze.shape[0] or new_pos[1] < 0 or new_pos[1] >= self.maze.shape[1]:
-            return False
-        else:"""
         return self.maze[new_pos]!=MazeState.WALL
                     
     def gen_next_state(self, move):
