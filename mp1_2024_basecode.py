@@ -5,13 +5,18 @@
 
 This program implements the uniform cost search algorithm for solving a maze
 (1 point cost for each move)
+THIS IS CHANGED TO A* SEARCH WITH A HEURISTIC FUNCTION.
+
+Artificial Intelligence
+MP1: Robot Navigation
+SEMESTER: Spring 2026
+NAME: Savannah Stumpf, Alexander Tardecilla, and Anthony Viglielmo
 """
 
 
 import numpy as np
 import queue # Needed for frontier queue
 from heapq import heapify
-
 
 class MazeState():
     """ Stores information about each visited state within the search """
@@ -27,14 +32,14 @@ class MazeState():
     MAZE_FILE = 'maze2024.txt'
     maze = np.loadtxt(MAZE_FILE, dtype=np.int32)  
     start = tuple(np.array(np.where(maze==5)).flatten())
-    ends = np.where(maze==2)
+    ends = list(zip(np.where(maze==2)[0], np.where(maze==2)[1])) # List of exit positions (in case there are multiple exits in the maze)
     move_num = 0 # Used by show_path() to count moves in the solution path
     
     def reset_state():
         """ Resets the static variables to prepare for a new search """
         MazeState.maze = np.loadtxt(MazeState.MAZE_FILE, dtype=np.int32)  
         MazeState.start = tuple(np.array(np.where(MazeState.maze==5)).flatten())
-        MazeState.ends = np.where(MazeState.maze==2)
+        MazeState.ends = list(zip(np.where(MazeState.maze==2)[0], np.where(MazeState.maze==2)[1]))
         MazeState.move_num = 0
     
     def __init__(self, conf=start, g=0, pred_state=None, pred_action=None):
@@ -58,7 +63,7 @@ class MazeState():
     
     def __lt__(self, other):
         """ Allows for ordering the states by the path (g) cost """
-        return self.gcost < other.gcost
+        return (self.gcost + self.heuristic()) < (other.gcost + other.heuristic())  
     
     def __str__(self):
         """ Returns the maze representation of the state """
@@ -78,7 +83,27 @@ class MazeState():
             print('Move',MazeState.move_num, 'ACTION:', self.action_from_pred)
         MazeState.move_num = MazeState.move_num + 1
         self.maze[self.pos] = MazeState.PATH
-    
+
+    def heuristic(self):
+        """Heuristic function for A* search"""
+
+        rows, cols = self.maze.shape # Get the total number of rows and columns in the maze
+        x1, y1 = self.pos #get the current position of the agent
+        best = float('inf') # initialize best to infinity
+
+        for (x2, y2) in MazeState.ends: # Loop through all exit positions
+            dx = abs(x1 - x2) # calculate the horizontal distance to the exit
+            dy = abs(y1 - y2) #calculate the vertical distance to the exit
+
+            dx = min(dx, rows - dx) #account for wrap-around in horizontal direction
+            dy = min(dy, cols - dy) #account for wrap-around in vertical direction
+
+            distance = dx + dy #calculate the distance to the exit
+            best = min(best, distance) #update best if this exit is closer than the previously found closest exit
+
+        return best
+
+
     def get_new_pos(self, move):
         """ Returns a new position from the current position and the specified move """
         rows = self.maze.shape[0]
@@ -150,6 +175,8 @@ possible_moves = [
 ]
 
 best_move = None
+best_length = float('inf')
+best_states = 0
 
 print(MazeState.maze)
 
@@ -203,5 +230,9 @@ for i, moves in enumerate(possible_moves):
     else:
         print('\nNumber of states visited =', num_states)
         print('\nLength of shortest path = ', move_path_length)
-        
-    print('\n BEST MOVE:') # TODO: work on tracking the best move
+        if move_path_length < best_length:
+            best_length = move_path_length
+            best_move = disabled_move
+
+
+print('\n BEST MOVE:', best_move) 
